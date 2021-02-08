@@ -2,8 +2,6 @@
 
 #include <stdint.h>
 
-// http://devernay.free.fr/hacks/chip8/C8TECH10.HTM#memmap
-
 #define MEMORY_SIZE 0xFFF
 #define DISPLAY_HEIGHT 32
 #define DISPLAY_WIDTH 64
