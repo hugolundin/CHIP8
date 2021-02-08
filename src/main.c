@@ -4,11 +4,11 @@
 
 #include "cpu.h"
 
-void chip8_run_limited(struct cpu_s * cpu, unsigned count)
+void chip8_run_cycles(struct cpu_s * cpu, unsigned cycles)
 {
-    while (count > 0) {
+    while (cycles > 0) {
         cpu_clock(cpu);
-        count -= 1;
+        cycles -= 1;
     }
 }
 
@@ -22,7 +22,7 @@ void chip8_run(struct cpu_s * cpu)
 int main(int argc, char ** argv)
 {
     struct cpu_s cpu = {0};
-    chip8_run_limited(&cpu, 8);
+    chip8_run_cycles(&cpu, 5);
 
     return 0;
 }

@@ -12,4 +12,3 @@ void cpu_clock(struct cpu_s * cpu)
 {
     printf("yello!\n");
 }
-
