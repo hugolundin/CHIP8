@@ -7,6 +7,7 @@ add_executable(
     main
     main.c
     cpu.c
+    display.c
 )
 
 target_link_libraries(

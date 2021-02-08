@@ -2,9 +2,9 @@
 
 #include <stdint.h>
 
-#define MEMORY_SIZE 0xFFF
-#define DISPLAY_HEIGHT 32
 #define DISPLAY_WIDTH 64
+#define DISPLAY_HEIGHT 32
+#define MEMORY_SIZE 0xFFF
 
 struct cpu_s{
     uint8_t memory[MEMORY_SIZE];

@@ -3,34 +3,32 @@
 #include <SDL.h>
 
 #include "cpu.h"
+#include "display.h"
 
 int main(int argc, char ** argv)
 {
+    int ret = 0;
     struct cpu_s cpu = {0};
-    
-    int scale = 10;
-    SDL_Init(SDL_INIT_EVERYTHING);
+    struct display_s display = {0};
 
-    SDL_Window * screen = SDL_CreateWindow(
-        /* title = */ "CHIP-8",
-        /* x = */ SDL_WINDOWPOS_CENTERED,
-        /* y = */ SDL_WINDOWPOS_CENTERED,
-        /* w = */ 64 * scale,
-        /* h = */ 32 * scale,
-        /* flags = */ SDL_WINDOW_OPENGL
-    );
-
-    SDL_Renderer * renderer = SDL_CreateRenderer(
-        /*screen = */ screen,
-        /* index = */ -1,
-        /* flags = */ 0
-    );
-
-    SDL_Event event;
-
-    for (;;) {
-        while (SDL_PollEvent(&event));
+    ret = display_init(&display, DISPLAY_WIDTH, DISPLAY_HEIGHT);
+    if (ret < 0) {
+        exit(EXIT_FAILURE);
     }
 
+    SDL_Event event;
+    bool running = true;
+    
+    while (running) {
+        display_render(&display, cpu.display);
+
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = false;
+            }
+        }
+    }
+
+    display_deinit(&display);
     return 0;
 }
