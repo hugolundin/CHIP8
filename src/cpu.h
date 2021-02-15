@@ -7,8 +7,11 @@
 #define MEMORY_SIZE 0xFFF
 
 struct cpu_s{
+    int counter;
+    bool render_flag;
+
     uint8_t memory[MEMORY_SIZE];
-    uint8_t display[DISPLAY_HEIGHT][DISPLAY_WIDTH];
+    uint32_t display[DISPLAY_HEIGHT * DISPLAY_WIDTH];
 
     // Stack pointer.
     uint8_t SP;
@@ -50,3 +53,21 @@ struct cpu_s{
 
 void cpu_init(struct cpu_s * cpu);
 void cpu_clock(struct cpu_s * cpu);
+
+int cpu_load_program(
+    struct cpu_s * cpu,
+    uint8_t * program,
+    size_t program_len
+);
+
+int cpu_pixel_enable(
+    struct cpu_s * cpu,
+    unsigned x,
+    unsigned y
+);
+
+int cpu_pixel_disable(
+    struct cpu_s * cpu,
+    unsigned x,
+    unsigned y
+);

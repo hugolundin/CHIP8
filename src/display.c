@@ -1,4 +1,6 @@
 #include <SDL.h>
+#include <stdbool.h>
+#include "cpu.h"
 #include "display.h"
 
 int display_init(struct display_s * display, int width, int height)
@@ -23,7 +25,7 @@ int display_init(struct display_s * display, int width, int height)
     display->renderer = SDL_CreateRenderer(
         /* window = */ display->window,
         /* index = */ -1,
-        /* flags = */ SDL_RENDERER_ACCELERATED
+        /* flags = */ 0
     );
 
     if (NULL == display->renderer) {
@@ -53,14 +55,14 @@ void display_deinit(struct display_s * display)
     SDL_Quit();
 }
 
-int display_render(struct display_s * display, uint32_t * buf)
+int display_render(struct display_s * display, struct cpu_s * cpu)
 {
     int ret = 0;
 
     ret = SDL_UpdateTexture(
         /* texture = */ display->texture,
         /* rect = */ NULL,
-        /* pixels = */ buf,
+        /* pixels = */ (uint32_t *) cpu->display,
         /* pitch = */ display->width * sizeof(uint32_t)
     );
 
@@ -72,5 +74,6 @@ int display_render(struct display_s * display, uint32_t * buf)
     );
 
     SDL_RenderPresent(display->renderer);
+    cpu->render_flag = false;
     return 0;
 }
