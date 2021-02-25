@@ -5,7 +5,7 @@
 #include "cpu.h"
 #include "display.h"
 
-static size_t load_file(char const * const filename, uint8_t * buf)
+static size_t open_file(char const * const filename, uint8_t * buf)
 {
     FILE * file = fopen(filename, "rb");
     if (NULL == file) {
@@ -25,6 +25,13 @@ static size_t load_file(char const * const filename, uint8_t * buf)
     return bytes_written;
 }
 
+static void dump_rom(uint8_t * buf, size_t buf_len)
+{
+    for (size_t i = 0; i < buf_len; i++) {
+        printf("%x\n", buf[i]);
+    }
+}
+
 int main(int argc, char ** argv)
 {
     int ret = 0;
@@ -38,12 +45,17 @@ int main(int argc, char ** argv)
         exit(EXIT_FAILURE);
     }
 
-    bytes_written = load_file("/Users/hugolundin/Developer/personal/chip8/programs/test_opcode.ch8", buf);
+    bytes_written = open_file("/Users/hugolundin/Developer/personal/chip8/roms/ibm_logo.ch8", buf);
     if (bytes_written <= 0) {
         exit(EXIT_FAILURE);
     }
 
-    ret = cpu_load_program(&cpu, buf, bytes_written);
+    ret = cpu_init(&cpu, -1);
+    if (ret < 0) {
+        exit(EXIT_FAILURE);
+    }
+
+    ret = cpu_load_rom(&cpu, buf, bytes_written);
     if (ret < 0) {
         exit(EXIT_FAILURE);
     }
@@ -52,7 +64,10 @@ int main(int argc, char ** argv)
     bool running = true;
     
     while (running) {
-        cpu_clock(&cpu);
+        ret = cpu_clock(&cpu);
+        if (ret < 0) {
+            running = false;
+        }
 
         if (cpu.render_flag) {
             display_render(&display, &cpu);
@@ -67,6 +82,10 @@ int main(int argc, char ** argv)
                 cpu.render_flag = true;
             }
         }
+    }
+
+    if (cpu.unknown_instructions) {
+        printf("Unknown instructions found.\n");
     }
 
     display_deinit(&display);
