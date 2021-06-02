@@ -2,6 +2,23 @@
 
 #include <stdint.h>
 
+#define V0 0
+#define V1 1
+#define V2 2
+#define V3 3
+#define V4 4 
+#define V5 5
+#define V6 6
+#define V7 7
+#define V8 8
+#define V9 9
+#define VA 10
+#define VB 11
+#define VC 12
+#define VD 13
+#define VE 14
+#define VF 15
+
 #define DISPLAY_WIDTH 64
 #define DISPLAY_HEIGHT 32
 #define MEMORY_SIZE 0xFFF
@@ -10,15 +27,15 @@
 #define ERROR -1
 #define SUCCESS 0
 
-#define INSTRUCTION(b1, b2) ((b1 << 8) | b2)
-#define OP(instruction) (instruction & 0xF000)
-#define X(instruction) (instruction & 0x0F00)
-#define Y(instruction) (instruction & 0x00F0)
-#define N(instruction) (instruction & 0x000F)
-#define NN(instruction) (instruction & 0x00FF)
-#define NNN(instruction) (instruction & 0x0FFF)
+#define INSTR(b1, b2) ((b1 << 8) | b2)
+#define INSTR_OP(instruction) (instruction & 0xF000)
+#define INSTR_X(instruction) (instruction & 0x0F00)
+#define INSTR_Y(instruction) (instruction & 0x00F0)
+#define INSTR_N(instruction) (instruction & 0x000F)
+#define INSTR_NN(instruction) (instruction & 0x00FF)
+#define INSTR_NNN(instruction) (instruction & 0x0FFF)
 
-struct cpu_s{
+struct cpu_s {
     int cycles;
     int counter;
     bool render_flag;

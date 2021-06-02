@@ -3,7 +3,6 @@
 
 #include <SDL.h>
 
-
 #define SCALE 10
 
 struct display_s {

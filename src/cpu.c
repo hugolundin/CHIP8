@@ -1,16 +1,21 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdint.h>
+
 #include <assert.h>
 
 #include "cpu.h"
 #include "instructions.h"
 
-//------------------------------------------------------
-// Video memory management
-//------------------------------------------------------
+static int cpu_vram_get(
+    struct cpu_s * cpu, unsigned x, unsigned y
+)
+{
+    return cpu->display[x + (y * DISPLAY_WIDTH)];
+}
 
-static int cpu_pixel_set(
+static int cpu_vram_set(
     struct cpu_s * cpu, unsigned x, unsigned y, int32_t color
 )
 {
@@ -26,17 +31,29 @@ static int cpu_pixel_set(
 
 int cpu_pixel_enable(struct cpu_s * cpu, unsigned x, unsigned y)
 {
-    return cpu_pixel_set(cpu, x, y, 0xFFFFFFFF);
+    return cpu_vram_set(cpu, x, y, 0xFFFFFFFF);
 }
 
 int cpu_pixel_disable(struct cpu_s * cpu, unsigned x, unsigned y)
 {
-    return cpu_pixel_set(cpu, x, y, 0xFF000000);
+    return cpu_vram_set(cpu, x, y, 0xFF000000);
 }
 
-//------------------------------------------------------
-// CPU management
-//------------------------------------------------------
+int cpu_clear_vram(struct cpu_s * cpu)
+{
+    int ret = 0; 
+
+    for (int x = 0; x < DISPLAY_WIDTH; x++) {
+        for (int y = 0; y < DISPLAY_HEIGHT; y++) {
+            ret = cpu_pixel_disable(cpu, x, y);
+            if (ret < 0) {
+                return -1;
+            }
+        }
+    }
+
+    return 0;
+}
 
 int cpu_init(struct cpu_s * cpu, int cycles)
 {
@@ -59,53 +76,83 @@ int cpu_clock(struct cpu_s * cpu)
     cpu->pc = (cpu->pc + 2) % MEMORY_SIZE;
 
     // Combine them into a 16-bit instruction. 
-    uint16_t instruction = INSTRUCTION(b1, b2);
+    uint16_t instruction = INSTR(b1, b2);
 
-    switch (OP(instruction)) {
+    switch (INSTR_OP(instruction)) {
+
+        // Clear screen
         case 0x0000:
-            switch (NN(instruction)) {
+            switch (INSTR_NN(instruction)) {
                 case 0x00E0:
-                    printf("00E0: Clear screen\n");
+                    cpu_clear_vram(cpu);
                     break;
 
                 default:
-                    printf("--- Unknown instruction: %04X\n", instruction);
                     break;
             }
 
             break;
 
+        // Set pc 
         case 0x1000:
-            printf("1NNN: PC = %d\n", NNN(instruction));
+            cpu->pc = INSTR_NNN(instruction);
             break;
 
-        case 0x6000:
-            printf("6XNN: Set register V%d to %d\n", X(instruction), NN(instruction));
-            break;
+        // printf("6XINSTR_NN: Set register V%d to %d\n", X(instruction), INSTR_NN(instruction));
+        case 0x6000: {
+            uint8_t reg = INSTR_X(instruction);
+            uint8_t value = INSTR_NN(instruction);
+            cpu->v[reg] = value;
 
-        case 0x7000:
-            printf("7XNN: Add %d to register V%d\n", NN(instruction), X(instruction));
             break;
+        }
 
+        // printf("7XINSTR_NN: Add %d to register V%d\n", INSTR_NN(instruction), X(instruction));
+        case 0x7000: {
+            uint8_t reg = INSTR_X(instruction);
+            uint8_t value = INSTR_NN(instruction);
+            cpu->v[reg] += value;
+            break;
+        }
+
+        // printf("AINSTR_NNN: Set register I to %d\n", INSTR_NNN(instruction));
         case 0xA000:
-            printf("ANNN: Set register I to %d\n", NNN(instruction));
+            cpu->i = INSTR_NNN(instruction);
+            
             break;
 
-        case 0xD000:
-            printf("DXYN: Display/draw\n");
+        case 0xD000: {
+            
+            cpu->v[VF] = 0;
+            uint8_t x = cpu->v[INSTR_X(instruction)] % DISPLAY_WIDTH;
+            uint8_t y = cpu->v[INSTR_Y(instruction)] % DISPLAY_HEIGHT;
+
+            for (uint8_t i = 0; i < INSTR_N(instruction); i++) {
+                uint8_t sprite = cpu->memory[cpu->i];
+
+                for (uint8_t j = 0; j < 8; j++) {
+                    uint8_t sprite_bit = sprite << j;
+                    uint8_t data_bit = cpu_vram_get(cpu, x, y);
+
+                    if (sprite_bit ^ data_bit) {
+                        cpu_pixel_disable(cpu, x, y);
+                        cpu->v[VF] = 1;
+                    } else {
+                        cpu_pixel_enable(cpu, x, y);
+                    }
+                }
+            }
+
             break;
+        }
+
 
         default:
-            printf("--- Unknown instruction: %04X\n", instruction);
             break;
     }
 
     return 0;
 }
-
-//------------------------------------------------------
-// Program memory management
-//------------------------------------------------------
 
 int cpu_load_rom(
     struct cpu_s * cpu,
