@@ -118,29 +118,42 @@ int cpu_clock(struct cpu_s * cpu)
         // printf("AINSTR_NNN: Set register I to %d\n", INSTR_NNN(instruction));
         case 0xA000:
             cpu->i = INSTR_NNN(instruction);
-            
             break;
 
         case 0xD000: {
-            
             cpu->v[VF] = 0;
             uint8_t x = cpu->v[INSTR_X(instruction)] % DISPLAY_WIDTH;
             uint8_t y = cpu->v[INSTR_Y(instruction)] % DISPLAY_HEIGHT;
 
-            for (uint8_t i = 0; i < INSTR_N(instruction); i++) {
-                uint8_t sprite = cpu->memory[cpu->i];
 
-                for (uint8_t j = 0; j < 8; j++) {
-                    uint8_t sprite_bit = sprite << j;
-                    uint8_t data_bit = cpu_vram_get(cpu, x, y);
+            for (int i = 0; i < INSTR_N(instruction); i++) {
 
-                    if (sprite_bit ^ data_bit) {
-                        cpu_pixel_disable(cpu, x, y);
+                // Not really sure about this, when do we change it? 
+                uint8_t sprite_data = cpu->memory[cpu->i];
+
+                // Go through all bits.
+                for (int j = 0; j < 8; j++) {
+
+                    // Get the bit at the current position.
+                    uint8_t sprite_bit = ((sprite_data >> j) % 2);
+                    uint8_t display_bit = cpu_vram_get(cpu, x, y);
+                    
+                    if (sprite_bit & display_bit) {
+                        printf("hej!\n");
+                        cpu_pixel_enable(cpu, x, y);
                         cpu->v[VF] = 1;
-                    } else {
+                    } else if (sprite_bit & !display_bit) {
                         cpu_pixel_enable(cpu, x, y);
                     }
+
+                    if (x == DISPLAY_WIDTH - 1) {
+                        break;
+                    }
+
+                    x += 1;
                 }
+
+                y += 1;
             }
 
             break;
