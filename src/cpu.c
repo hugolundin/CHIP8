@@ -122,38 +122,26 @@ int cpu_clock(struct cpu_s * cpu)
 
         case 0xD000: {
             cpu->v[VF] = 0;
-            uint8_t x = cpu->v[INSTR_X(instruction)] % DISPLAY_WIDTH;
-            uint8_t y = cpu->v[INSTR_Y(instruction)] % DISPLAY_HEIGHT;
 
+            for (int y = 0; y < INSTR_N(instruction); y++) {
+                for (int x = 0; x < 8; x++) {
+                    uint8_t pixel = cpu->memory[cpu->i + y];
 
-            for (int i = 0; i < INSTR_N(instruction); i++) {
+                    if (pixel & (0x80 >> x)) {
+                        int index =
+                            (cpu->v[INSTR_X(instruction)] + x) % DISPLAY_WIDTH +
+                            ((cpu->v[INSTR_Y(instruction)] + y) % DISPLAY_HEIGHT) * DISPLAY_WIDTH;
 
-                // Not really sure about this, when do we change it? 
-                uint8_t sprite_data = cpu->memory[cpu->i];
+                        if (cpu->display[index]) {
+                            cpu->v[VF] = 1;
+                            cpu->display[index] = 0xFFFFFFFF;
+                        } else {
+                            cpu->display[index] = 0xFF000000;
+                        }
 
-                // Go through all bits.
-                for (int j = 0; j < 8; j++) {
-
-                    // Get the bit at the current position.
-                    uint8_t sprite_bit = ((sprite_data >> j) % 2);
-                    uint8_t display_bit = cpu_vram_get(cpu, x, y);
-                    
-                    if (sprite_bit & display_bit) {
-                        printf("hej!\n");
-                        cpu_pixel_enable(cpu, x, y);
-                        cpu->v[VF] = 1;
-                    } else if (sprite_bit & !display_bit) {
-                        cpu_pixel_enable(cpu, x, y);
+                        cpu->render_flag = true;
                     }
-
-                    if (x == DISPLAY_WIDTH - 1) {
-                        break;
-                    }
-
-                    x += 1;
                 }
-
-                y += 1;
             }
 
             break;
